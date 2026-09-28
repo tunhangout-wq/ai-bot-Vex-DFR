@@ -4,7 +4,6 @@ leaderboard.py
 عرض لوحة صدارة أغنى الأعضاء بالسيرفر.
 """
 
-import discord
 from discord.ext import commands
 
 from bot.utils.data_manager import get_leaderboard, load_settings

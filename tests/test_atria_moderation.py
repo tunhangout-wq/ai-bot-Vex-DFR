@@ -30,15 +30,27 @@ class AtriaBanPolicyTests(unittest.IsolatedAsyncioTestCase):
         )
         cog = Atria(SimpleNamespace(user=SimpleNamespace(id=789)))
         settings = {
-            "atria": {
-                "moderation_enabled": True,
-                "allow_ai_ban": allow_ai_ban,
-            }
+            "atria": {"enabled": True, "moderation_mode": "all"},
+            "ai": {
+                "moderation": {
+                    "enabled": True,
+                    "automatic_actions": ["ban"],
+                    "allow_ai_ban": allow_ai_ban,
+                    "min_confidence": 0.95,
+                    "required_ban_violations": 2,
+                }
+            },
         }
 
         with patch("bot.cogs.atria.load_settings", return_value=settings), patch(
             "bot.cogs.atria.atria_chat",
-            new=AsyncMock(return_value=json.dumps({"action": "ban", "reason": "test"})),
+            new=AsyncMock(return_value=json.dumps({
+                "action": "ban",
+                "confidence": 0.99,
+                "classification": "harassment",
+                "event": "explicit_violation",
+                "reason": "test",
+            })),
         ), patch(
             "bot.services.moderation_tools.moderation_tools.store.reserve_moderation_action",
             return_value=True,

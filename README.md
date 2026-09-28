@@ -95,11 +95,12 @@ python -m compileall -q bot
 - Command Center discovers executable leaf commands from all loaded Cogs, not only the Control cog.
 - Discord application-command metadata is exposed to the dashboard, including choices; the dashboard renders selects for choices and converts Discord objects such as Member/Role/Channel before invoking the same Cog callback.
 - Atria Chat and Atria Moderation use `ATRIA_API_KEY` server-side only (`AI_API_KEY` remains a legacy fallback). Automatic moderation is policy-checked and rate-limited.
+- `ZENMUX_API_KEY` is not read by the direct Atria integration. A provider HTTP 401 (for example, “Invalid API key”) means the configured credential was rejected; issue a valid Atria key and set it locally as `ATRIA_API_KEY`. Restart the bot after changing `.env` so the process reloads its configuration. Do not paste credentials into chat or commit them.
 - Live Discord Gateway/API validation still requires running the project with a real Discord token, guild ID, and bot permissions.
 
 
 ### AI credentials
-ضع مفتاح Atria الجديد في `ATRIA_API_KEY` داخل `.env` المحلي فقط. لا تضع secrets في `.env.example` أو HTML أو JavaScript أو Git. يظل `AI_API_KEY` مدعومًا كاسم قديم للتوافق.
+ضع مفتاح Atria الجديد في `ATRIA_API_KEY` داخل `.env` المحلي فقط. لا تضع secrets في `.env.example` أو HTML أو JavaScript أو Git. يظل `AI_API_KEY` مدعومًا كاسم قديم للتوافق. يمكن ضبط `ATRIA_API_BASE_URL` لاستخدام endpoint متوافق مع OpenAI؛ لا يُرسل `ZENMUX_API_KEY` تلقائيًا إلى Atria.
 ## Discord AI message access
 
 AI Chat وAI Moderation يعتمدان على قراءة محتوى الرسائل. في Discord Developer Portal افتح التطبيق → Bot → Privileged Gateway Intents، ثم فعّل **Message Content Intent** واحفظ التغيير. المشروع يطلب هذا الـIntent برمجيًا، لكن Discord يتطلب تفعيله أيضًا من لوحة التطبيق.

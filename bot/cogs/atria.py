@@ -1,5 +1,5 @@
 """Atria Dawn integration: explicit AI chat plus optional moderation hooks."""
-import discord, json, datetime, logging
+import discord, json, logging
 from discord.ext import commands
 from discord import app_commands
 from bot.utils.data_manager import load_settings
@@ -54,7 +54,7 @@ class Atria(commands.Cog):
             if answer is None:
                 await ctx.send("تعذر تنفيذ الطلب بسبب حد الاستخدام. حاول بعد قليل.")
                 return
-            await ctx.send(answer)
+            await ctx.send(answer, allowed_mentions=discord.AllowedMentions.none())
         except (RuntimeError, ValueError):
             logger.exception("Atria chat failed user=%s", ctx.author.id)
             await ctx.send("❌ تعذر الوصول إلى خدمة Atria الآن.")

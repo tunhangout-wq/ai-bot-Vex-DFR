@@ -1,0 +1,27 @@
+{
+  "bot": {
+    "name": "Vixen EDR",
+    "prefix": "!",
+    "currency_name": "عملة",
+    "currency_symbol": "🪙",
+    "embed_color": "#F5A623",
+    "success_color": "#2ECC71",
+    "error_color": "#E74C3C"
+  },
+  "economy": {},
+  "gambling": {},
+  "shop": {"items": []},
+  "roles": {"level_roles": [], "autorole_enabled": false, "autorole_id": ""},
+  "channels": {"log_channel_id": "", "welcome_channel_id": ""},
+  "leaderboard": {"show_top": 10},
+  "ai": {"moderation": {}, "chat": {}},
+  "atria": {},
+  "dashboard": {"enabled": true, "host": "127.0.0.1", "port": 8080},
+  "ranks": {"owner_id": "", "permissions": {}, "daily_limits": {}},
+  "levels": {},
+  "bank_interest": {},
+  "stocks": {},
+  "loans": {},
+  "rob": {},
+  "career": {}
+}

@@ -5,6 +5,8 @@ import logging
 import re
 import time
 
+import discord
+
 from bot.services.ai_provider import ai_provider
 from bot.utils.ai_store import ai_store
 
@@ -118,12 +120,20 @@ class AIChatService:
                 content,
                 config,
             )
-            await message.reply(answer[:1900], mention_author=False)
+            await message.reply(
+                answer[:1900],
+                mention_author=False,
+                allowed_mentions=discord.AllowedMentions.none(),
+            )
             return True
         except Exception as exc:
             logger.warning("AI chat failed guild=%s channel=%s error=%s", message.guild.id, channel_id, type(exc).__name__)
             try:
-                await message.reply("AI service is temporarily unavailable.", mention_author=False)
+                await message.reply(
+                    "AI service is temporarily unavailable.",
+                    mention_author=False,
+                    allowed_mentions=discord.AllowedMentions.none(),
+                )
             except Exception:
                 logger.warning("Could not report AI chat failure to Discord channel=%s", channel_id)
             return False

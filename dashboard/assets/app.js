@@ -161,10 +161,14 @@ $('#loginForm').onsubmit = async event => {
     $('#loginErr').textContent = error.message;
   }
 };
-$('#logout').onclick = () => {
-  localStorage.removeItem('vixen_token');
-  API.token = null;
-  location.reload();
+$('#logout').onclick = async () => {
+  try {
+    await API.post('/api/logout', {});
+  } finally {
+    localStorage.removeItem('vixen_token');
+    API.token = null;
+    location.reload();
+  }
 };
 $('#mobileOpen').onclick = () => $('#app').classList.add('menu-open');
 $('#mobileClose').onclick = () => $('#app').classList.remove('menu-open');

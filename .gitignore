@@ -1,0 +1,8 @@
+.env
+__pycache__/
+bot/data/*.json
+!bot/data/*.example.json
+*.bak
+*.corrupt
+*.tmp
+*.sqlite3

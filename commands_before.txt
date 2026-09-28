@@ -1,0 +1,117 @@
+bot/cogs/admin.py: logs
+bot/cogs/atria.py: ai chat
+bot/cogs/atria.py: ai moderate
+bot/cogs/bank.py: deposit
+bot/cogs/bank.py: interest
+bot/cogs/bank.py: withdraw
+bot/cogs/career.py: career apply
+bot/cogs/career.py: career business
+bot/cogs/career.py: career list
+bot/cogs/career.py: career promote
+bot/cogs/career.py: career quit
+bot/cogs/career.py: career status
+bot/cogs/career.py: career work
+bot/cogs/control.py: banner
+bot/cogs/control.py: channel category
+bot/cogs/control.py: channel clone
+bot/cogs/control.py: channel create
+bot/cogs/control.py: channel delete
+bot/cogs/control.py: channel lock
+bot/cogs/control.py: channel purge
+bot/cogs/control.py: channel rename
+bot/cogs/control.py: channel slowmode
+bot/cogs/control.py: channel topic
+bot/cogs/control.py: channel unlock
+bot/cogs/control.py: clearwarnings
+bot/cogs/control.py: join
+bot/cogs/control.py: leave
+bot/cogs/control.py: member avatar
+bot/cogs/control.py: member ban
+bot/cogs/control.py: member deafen
+bot/cogs/control.py: member disconnect
+bot/cogs/control.py: member dm
+bot/cogs/control.py: member kick
+bot/cogs/control.py: member move
+bot/cogs/control.py: member mute
+bot/cogs/control.py: member timeout
+bot/cogs/control.py: member unban
+bot/cogs/control.py: member undeafen
+bot/cogs/control.py: member unmute
+bot/cogs/control.py: member untimeout
+bot/cogs/control.py: nickname
+bot/cogs/control.py: role add
+bot/cogs/control.py: role color
+bot/cogs/control.py: role create
+bot/cogs/control.py: role delete
+bot/cogs/control.py: role hoist
+bot/cogs/control.py: role list
+bot/cogs/control.py: role remove
+bot/cogs/control.py: role rename
+bot/cogs/control.py: security audit
+bot/cogs/control.py: security automod
+bot/cogs/control.py: security bans
+bot/cogs/control.py: security createinvite
+bot/cogs/control.py: security deleteinvite
+bot/cogs/control.py: security deletewebhooks
+bot/cogs/control.py: security invites
+bot/cogs/control.py: security webhooks
+bot/cogs/control.py: server banner
+bot/cogs/control.py: server description
+bot/cogs/control.py: server features
+bot/cogs/control.py: server icon
+bot/cogs/control.py: server lockdown
+bot/cogs/control.py: server name
+bot/cogs/control.py: server slowmode
+bot/cogs/control.py: server systemchannel
+bot/cogs/control.py: server unlockdown
+bot/cogs/control.py: server verification
+bot/cogs/control.py: serverstats
+bot/cogs/control.py: uptime
+bot/cogs/control.py: userinfo
+bot/cogs/control.py: utility botinfo
+bot/cogs/control.py: utility channelinfo
+bot/cogs/control.py: utility emoji
+bot/cogs/control.py: utility event
+bot/cogs/control.py: utility events
+bot/cogs/control.py: utility members
+bot/cogs/control.py: utility ping
+bot/cogs/control.py: utility prune
+bot/cogs/control.py: utility roleinfo
+bot/cogs/control.py: utility say
+bot/cogs/control.py: utility sticker
+bot/cogs/control.py: warn
+bot/cogs/control.py: warnings
+bot/cogs/economy.py: balance
+bot/cogs/economy.py: daily
+bot/cogs/economy.py: transfer
+bot/cogs/economy.py: work
+bot/cogs/gambling.py: blackjack
+bot/cogs/gambling.py: coinflip
+bot/cogs/gambling.py: slots
+bot/cogs/general.py: help
+bot/cogs/leaderboard.py: leaderboard
+bot/cogs/levels.py: levels
+bot/cogs/levels.py: rank
+bot/cogs/loans.py: loan my
+bot/cogs/loans.py: loan repay
+bot/cogs/loans.py: loan request
+bot/cogs/rob.py: rob
+bot/cogs/rob.py: robstats
+bot/cogs/shop.py: buy
+bot/cogs/shop.py: inventory
+bot/cogs/shop.py: shop
+bot/cogs/staff.py: activate
+bot/cogs/staff.py: addmoney
+bot/cogs/staff.py: codes
+bot/cogs/staff.py: gencode
+bot/cogs/staff.py: myrank
+bot/cogs/staff.py: removemoney
+bot/cogs/staff.py: removestaff
+bot/cogs/staff.py: resetbalance
+bot/cogs/staff.py: revokecode
+bot/cogs/staff.py: setrank
+bot/cogs/staff.py: stafflist
+bot/cogs/stocks.py: portfolio
+bot/cogs/stocks.py: stockbuy
+bot/cogs/stocks.py: stocks
+bot/cogs/stocks.py: stocksell

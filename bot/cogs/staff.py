@@ -33,7 +33,7 @@ class Staff(commands.Cog):
 
     # ------------------------------------------------------------ تفعيل كود
     @commands.hybrid_command(name="activate", aliases=["تفعيل"], description="تفعيل رتبة إدارية بكود")
-    @app_commands.describe(code="كود التفعيل (مثال: CB-DEV-8F3K9A)")
+    @app_commands.describe(code="كود التفعيل الإداري")
     async def activate(self, ctx: commands.Context, code: str):
         result = ranks.activate_code(code, ctx.author.id)
         if not result["ok"]:

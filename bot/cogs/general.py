@@ -1,5 +1,4 @@
 """Dynamic help: every loaded Discord command is discoverable, including Control Center."""
-import discord
 from discord.ext import commands
 from bot.utils.data_manager import load_settings
 from bot.utils.embeds import base_embed

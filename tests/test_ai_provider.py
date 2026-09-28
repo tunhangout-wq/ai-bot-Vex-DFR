@@ -1,7 +1,7 @@
 import json
 import os
 import unittest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 from bot.services.ai_provider import AIProvider
 

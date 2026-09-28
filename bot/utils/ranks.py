@@ -6,7 +6,7 @@ ranks.py
 طرق الحصول على رتبة:
   1) المالك (Owner): آيدي ثابت في ملف .env (OWNER_ID) — يملك كل الصلاحيات
      ولا يمكن سحب رتبته، ويتجاوز كل الحدود.
-  2) أكواد الفريق: أكواد تُولَّد من الداشبورد أو أوامر البوت (مثال: CB-DEV-8F3K9A)
+    2) أكواد الفريق: أكواد تُولَّد من الداشبورد أو أوامر البوت
      وتُفعَّل بالأمر /activate — الكود يُربط بآيدي العضو نهائيًا.
 
 تسلسل الرتب: dev (3) > founder (2) > team (1)
@@ -265,7 +265,7 @@ def remaining_daily_quota(user_id: int) -> Optional[int]:
 # ---------------------------------------------------------------------------
 
 def generate_code(rank: str, created_by: int, note: str = "") -> Optional[str]:
-    """يولد كود تفعيل جديد للرتبة المحددة، مثال: CB-DEV-8F3K9A"""
+    """يولد كود تفعيل جديد للرتبة المحددة."""
     if rank not in RANK_LEVELS:
         return None
     alphabet = string.ascii_uppercase + string.digits

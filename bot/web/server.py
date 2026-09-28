@@ -23,6 +23,7 @@ import logging
 import json
 import inspect
 import hashlib
+import ipaddress
 import math
 import sqlite3
 import types
@@ -46,7 +47,11 @@ from bot.services.ai_chat import ai_chat_service
 from bot.utils.ai_store import ai_store
 from bot.utils.dm_store import dm_store
 from bot.services.dm_center import render_embed
-from bot.services.live_terminal import live_terminal, install_live_terminal
+from bot.services.live_terminal import (
+    TerminalSubscriberLimitError,
+    install_live_terminal,
+    live_terminal,
+)
 
 logger = logging.getLogger("Vixen.Web")
 DM_PREVIEW_TOKENS = {}
@@ -64,7 +69,8 @@ DM_STARTER_TEMPLATES = [
 
 DASHBOARD_DIR = Path(__file__).resolve().parent.parent.parent / "dashboard"
 
-SESSION_TTL = 7 * 24 * 3600  # أسبوع
+SESSION_TTL = 12 * 3600
+SESSION_ABSOLUTE_TTL = 7 * 24 * 3600
 MAX_ATTEMPTS = 8
 ATTEMPT_WINDOW = 300  # 5 دقائق
 MAX_SESSIONS = 5000
@@ -77,6 +83,7 @@ class DashboardSessions:
     def __init__(self):
         self.sessions = {}
         self.attempts = {}  # ip → [timestamps]
+        self.target_attempts = {}  # owner ID or staff code → [timestamps]
 
     def _prune_attempts(self, ip):
         now = time.time()
@@ -95,9 +102,26 @@ class DashboardSessions:
             self.attempts.pop(next(iter(self.attempts)))
         self.attempts.setdefault(ip, []).append(time.time())
 
+    def too_many_target_attempts(self, target: str) -> bool:
+        now = time.time()
+        attempts = [t for t in self.target_attempts.get(target, []) if now - t < ATTEMPT_WINDOW]
+        if attempts:
+            self.target_attempts[target] = attempts
+        else:
+            self.target_attempts.pop(target, None)
+        return len(attempts) >= MAX_ATTEMPTS
+
+    def record_target_attempt(self, target: str) -> None:
+        if target not in self.target_attempts and len(self.target_attempts) >= MAX_ATTEMPT_IPS:
+            self.target_attempts.pop(next(iter(self.target_attempts)))
+        self.target_attempts.setdefault(target, []).append(time.time())
+
     def create(self, user_id, rank: str, name: str = "", virtual: bool = False, code: str = "") -> str:
         now = time.time()
-        expired = [token for token, value in self.sessions.items() if value.get("expires", 0) <= now]
+        expired = [
+            token for token, value in self.sessions.items()
+            if value.get("expires", 0) <= now or value.get("absolute_expires", 0) <= now
+        ]
         for expired_token in expired:
             self.sessions.pop(expired_token, None)
         while len(self.sessions) >= MAX_SESSIONS:
@@ -110,6 +134,7 @@ class DashboardSessions:
             "virtual": virtual,   # جلسة بكود غير مربوط بآيدي ديسكورد
             "code": code,
             "expires": now + SESSION_TTL,
+            "absolute_expires": now + SESSION_ABSOLUTE_TTL,
         }
         return token
 
@@ -117,13 +142,40 @@ class DashboardSessions:
         session = self.sessions.get(token)
         if not session:
             return None
-        if time.time() > session["expires"]:
+        now = time.time()
+        absolute_expires = session.get("absolute_expires", session.get("expires", 0))
+        if now >= min(session.get("expires", 0), absolute_expires):
             del self.sessions[token]
             return None
+        session["expires"] = min(now + SESSION_TTL, absolute_expires)
         return session
+
+    def delete(self, token: str) -> bool:
+        return self.sessions.pop(token, None) is not None
 
 
 SESSIONS = DashboardSessions()
+
+
+def client_ip(request: web.Request) -> str:
+    remote = request.remote or "?"
+    trust_proxy = os.getenv("TRUST_PROXY", "").strip().lower() in {"1", "true", "yes", "on"}
+    if not trust_proxy:
+        return remote
+    try:
+        trusted_proxy_count = int(os.getenv("TRUSTED_PROXY_COUNT", "1"))
+    except (TypeError, ValueError):
+        return remote
+    if trusted_proxy_count < 1:
+        return remote
+    forwarded = request.headers.get("X-Forwarded-For", "").split(",")
+    if len(forwarded) < trusted_proxy_count:
+        return remote
+    candidate = forwarded[-trusted_proxy_count].strip()
+    try:
+        return str(ipaddress.ip_address(candidate))
+    except ValueError:
+        return remote
 
 
 def _json_response(data, status: int = 200) -> web.Response:
@@ -139,6 +191,13 @@ def get_session_from_request(request: web.Request):
     if not auth.startswith("Bearer "):
         return None
     return SESSIONS.get(auth[7:].strip())
+
+
+async def api_logout(request: web.Request) -> web.Response:
+    auth = request.headers.get("Authorization", "")
+    if not auth.startswith("Bearer ") or not SESSIONS.delete(auth[7:].strip()):
+        return _error("انتهت الجلسة — سجل دخول من جديد", 401)
+    return _json_response({"ok": True})
 
 
 def require_permission(request: web.Request, permission: str):
@@ -209,7 +268,7 @@ async def serve_index(request: web.Request) -> web.Response:
 # ---------------------------------------------------------------------------
 
 async def api_login(request: web.Request) -> web.Response:
-    ip = request.remote or "؟"
+    ip = client_ip(request)
     if SESSIONS.too_many_attempts(ip):
         return _error("محاولات كثيرة خاطئة — انتظر 5 دقائق وحاول مجددًا", 429)
 
@@ -221,6 +280,14 @@ async def api_login(request: web.Request) -> web.Response:
         return _error("طلب غير صالح")
 
     method = body.get("method", "code")
+    if method == "code":
+        target_identifier = f"code:{str(body.get('code') or '').strip().upper()}"
+    elif method == "owner":
+        target_identifier = f"owner:{str(body.get('owner_id') or '').strip()}"
+    else:
+        target_identifier = ""
+    if target_identifier and SESSIONS.too_many_target_attempts(target_identifier):
+        return _error("محاولات كثيرة لهذا الحساب أو الكود — انتظر 5 دقائق", 429)
     settings = load_settings()
 
     if method == "code":
@@ -228,9 +295,11 @@ async def api_login(request: web.Request) -> web.Response:
         entry = ranks.list_codes().get(code)
         if not entry:
             SESSIONS.record_attempt(ip)
+            SESSIONS.record_target_attempt(target_identifier)
             return _error("الكود غير صحيح — تأكد من كتابته", 401)
         if entry.get("revoked"):
             SESSIONS.record_attempt(ip)
+            SESSIONS.record_target_attempt(target_identifier)
             return _error("هذا الكود تم سحبه", 403)
 
         rank = entry.get("rank")
@@ -278,11 +347,20 @@ async def api_login(request: web.Request) -> web.Response:
 
         if not real_owner:
             return _error("ما تم ضبط OWNER_ID بملف .env — راجع ملف .env.example", 400)
-        if owner_id != str(real_owner):
+        if not secrets.compare_digest(
+            owner_id.encode("utf-8", "surrogatepass"),
+            str(real_owner).encode("utf-8", "surrogatepass"),
+        ):
             SESSIONS.record_attempt(ip)
+            SESSIONS.record_target_attempt(target_identifier)
             return _error("الآيدي ما يطابق آيدي المالك المسجل", 401)
-        if password != (os.getenv("DASHBOARD_PASSWORD") or dash_cfg.get("password", "")):
+        expected_password = os.getenv("DASHBOARD_PASSWORD") or dash_cfg.get("password", "")
+        if not secrets.compare_digest(
+            password.encode("utf-8", "surrogatepass"),
+            str(expected_password).encode("utf-8", "surrogatepass"),
+        ):
             SESSIONS.record_attempt(ip)
+            SESSIONS.record_target_attempt(target_identifier)
             return _error("كلمة المرور غير صحيحة", 401)
 
         token = SESSIONS.create(real_owner, "owner", name="المالك")
@@ -1756,6 +1834,9 @@ async def api_staff_revoke(request: web.Request) -> web.Response:
     if actor_rank != "owner" and target_level >= actor_level:
         return _error("لا يمكنك سحب كود لرتبة مساوية أو أعلى من رتبتك.", 403)
     if ranks.revoke_code(code):
+        for token, active_session in tuple(SESSIONS.sessions.items()):
+            if active_session.get("code") == code:
+                SESSIONS.delete(token)
         actor_id = int(session["user_id"]) if (not session.get("virtual") and session["user_id"].isdigit()) else 0
         ranks.log_action(actor_id, session.get("name", "لوحة التحكم"), "revoke_code", f"سحب {code}", "dashboard")
         return _json_response({"ok": True})
@@ -1781,6 +1862,9 @@ async def api_staff_remove(request: web.Request) -> web.Response:
     if target_rank and actor_rank != "owner" and target_level >= actor_level:
         return _error("لا يمكنك إزالة عضو رتبته مساوية أو أعلى من رتبتك.", 403)
     if ranks.remove_staff(int(user_id)):
+        for token, active_session in tuple(SESSIONS.sessions.items()):
+            if active_session.get("user_id") == user_id:
+                SESSIONS.delete(token)
         actor_id = int(session["user_id"]) if not session.get("virtual") and session["user_id"].isdigit() else 0
         ranks.log_action(actor_id, session.get("name", "لوحة التحكم"), "remove_staff", f"إزالة {user_id}", "dashboard")
         return _json_response({"ok": True})
@@ -1822,12 +1906,15 @@ async def api_logs(request: web.Request) -> web.Response:
 
 
 async def api_terminal_stream(request: web.Request) -> web.StreamResponse:
-    require_permission(request, "view_logs")
+    require_permission(request, "manage_settings")
+    try:
+        queue = live_terminal.subscribe()
+    except TerminalSubscriberLimitError:
+        return _error("وصل البث إلى الحد الأقصى للمشتركين", 429)
     response = web.StreamResponse(
         status=200,
         headers={"Content-Type": "text/event-stream", "Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
-    queue = live_terminal.subscribe()
     try:
         await response.prepare(request)
         while True:
@@ -1902,14 +1989,29 @@ async def error_middleware(request, handler):
             status=500,
         )
 
+async def security_headers(request: web.Request, response: web.StreamResponse) -> None:
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; img-src 'self' https://cdn.discordapp.com "
+        "https://media.discordapp.net data:; style-src 'self' 'unsafe-inline'; "
+        "script-src 'self'; connect-src 'self'; frame-ancestors 'none'; "
+        "base-uri 'none'; form-action 'self'"
+    )
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    if request.path.startswith("/api/"):
+        response.headers["Cache-Control"] = "no-store"
+
 
 def create_web_app(bot) -> web.Application:
     app = web.Application(middlewares=[error_middleware])
+    app.on_response_prepare.append(security_headers)
     app["bot"] = bot
 
     app.router.add_get("/", serve_index)
 
     app.router.add_post("/api/login", api_login)
+    app.router.add_post("/api/logout", api_logout)
     app.router.add_get("/api/me", api_me)
     app.router.add_get("/api/stats", api_stats)
     app.router.add_get("/api/users", api_users)

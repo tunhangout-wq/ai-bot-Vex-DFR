@@ -108,6 +108,7 @@ class ModerationToolLayer:
                 await message.channel.send(
                     f"⚠️ {target.mention}: {reason} (warning #{warning['warning_id']})",
                     delete_after=8,
+                    allowed_mentions=discord.AllowedMentions(users=[target]),
                 )
                 if warning["escalation"] == "timeout_applied":
                     self._record(bot, guild.id, target.id, "timeout_member", "success", reason)
