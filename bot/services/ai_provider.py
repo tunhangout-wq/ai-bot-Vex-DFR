@@ -42,7 +42,13 @@ class AIProvider:
     def api_key(self):
         # ATRIA_API_KEY is canonical for direct Atria access.
         # AI_API_KEY remains supported for compatibility with older Vixen installs.
-        return os.getenv("ATRIA_API_KEY") or os.getenv("AI_API_KEY")
+        for name in ("ATRIA_API_KEY", "AI_API_KEY"):
+            value = os.getenv(name)
+            if value:
+                normalized = "".join(value.split())
+                if normalized:
+                    return normalized
+        return None
 
     @staticmethod
     def _response_error(status, payload):

@@ -39,6 +39,18 @@ class FakeSession:
 
 
 class AIProviderTests(unittest.IsolatedAsyncioTestCase):
+    def test_api_key_whitespace_is_removed_when_read(self):
+        provider = AIProvider()
+        with patch.dict(
+            os.environ,
+            {"ATRIA_API_KEY": " demo -key ", "AI_API_KEY": ""},
+            clear=False,
+        ):
+            self.assertEqual(
+                provider.api_key,
+                "demo-key",
+            )
+
     async def test_missing_key_is_not_configured(self):
         provider = AIProvider()
         with patch.dict(os.environ, {"AI_API_KEY": "", "ATRIA_API_KEY": ""}, clear=False):
